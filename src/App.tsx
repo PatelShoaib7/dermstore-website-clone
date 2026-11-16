@@ -6,6 +6,8 @@ import { CartDrawer } from './components/CartDrawer';
 import { Home } from './pages/Home';
 import { Shop } from './pages/Shop';
 import { Cart } from './pages/Cart';
+import { Auth } from './pages/Auth';
+import { useAuth } from './context/AuthContext';
 import type {
   ActiveView,
   CatalogData,
@@ -27,6 +29,7 @@ const INITIAL_FILTERS: FilterState = {
 };
 
 export const App: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [activeView, setActiveView] = useState<ActiveView>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
@@ -111,6 +114,10 @@ export const App: React.FC = () => {
     setSearchQuery('');
     setSortBy('featured');
   };
+
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF9F7] text-neutral-900">

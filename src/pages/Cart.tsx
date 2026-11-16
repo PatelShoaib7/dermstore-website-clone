@@ -10,12 +10,14 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 interface CartProps {
   onContinueShopping: () => void;
 }
 
 export const Cart: React.FC<CartProps> = ({ onContinueShopping }) => {
+  const { user } = useAuth();
   const {
     items,
     updateQuantity,
@@ -69,7 +71,10 @@ export const Cart: React.FC<CartProps> = ({ onContinueShopping }) => {
             Thank You for Your Dermstore Order
           </h1>
           <p className="text-sm text-neutral-600 leading-relaxed max-w-md mx-auto">
-            Your clinical formulas are being prepared in our temperature-controlled fulfillment center. A confirmation receipt has been generated.
+            Your clinical formulas are being prepared in our temperature-controlled fulfillment center.{' '}
+            {user?.email
+              ? `A confirmation receipt has been linked to ${user.email}.`
+              : 'A confirmation receipt has been generated.'}
           </p>
           <div className="pt-4">
             <button

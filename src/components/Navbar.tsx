@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import {
   Search,
   ShoppingBag,
-  User,
   Globe,
   Menu,
   X,
   ChevronDown,
   Sparkles,
   Check,
+  LogOut,
 } from 'lucide-react';
 import { useCart, type CurrencyCode } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import type { ActiveView, Category } from '../types';
 
 interface NavbarProps {
@@ -38,9 +39,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   brandNames,
 }) => {
   const { totalItems, subtotal, openDrawer, currency, setCurrency, formatPrice } = useCart();
+  const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [brandsOpen, setBrandsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Account';
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'D';
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,11 +160,23 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setAccountOpen((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium tracking-wider uppercase text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 transition-colors"
+                className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium tracking-wider text-neutral-800 hover:text-neutral-950 hover:bg-neutral-100 transition-colors"
                 aria-expanded={accountOpen}
               >
-                <User className="w-4 h-4 stroke-[1.6]" />
-                <span className="hidden lg:inline">Account</span>
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-6 h-6 rounded-full object-cover border border-neutral-300"
+                  />
+                ) : (
+                  <span className="w-6 h-6 rounded-full bg-neutral-900 text-white text-[11px] font-semibold flex items-center justify-center">
+                    {userInitial}
+                  </span>
+                )}
+                <span className="hidden lg:inline max-w-[100px] truncate">
+                  {firstName}
+                </span>
               </button>
 
               {accountOpen && (
@@ -168,23 +185,52 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="fixed inset-0 z-10"
                     onClick={() => setAccountOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-neutral-200 shadow-xl p-4 z-20">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-900 pb-2 border-b border-neutral-100">
+                  <div className="absolute right-0 mt-2 w-72 bg-white border border-neutral-200 shadow-xl p-4 z-20">
+                    {user && (
+                      <div className="pb-3 mb-3 border-b border-neutral-100">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-neutral-950 truncate">
+                            {user.name}
+                          </p>
+                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 bg-[#F6F5F2] border border-neutral-200 text-neutral-700 shrink-0">
+                            {user.provider === 'google' ? 'Google OAuth' : 'Email Auth'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-500 truncate mt-0.5">
+                          {user.email}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-900">
                       <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                      Dermstore Rewards
+                      Dermstore Rewards Active
                     </div>
-                    <p className="text-xs text-neutral-600 mt-2 leading-relaxed">
-                      Earn 5 points per $1 spent on SkinCeuticals, EltaMD, and 300+ dermatologist-trusted brands.
+                    <p className="text-xs text-neutral-600 mt-1.5 leading-relaxed">
+                      Earn 5 points per $1 spent on SkinCeuticals, EltaMD, and clinical favorites.
                     </p>
+
                     <button
                       type="button"
                       onClick={() => {
                         setAccountOpen(false);
                         onNavigateShop({ bestSellersOnly: true });
                       }}
-                      className="mt-3 w-full bg-neutral-900 text-white text-xs uppercase tracking-widest py-2.5 hover:bg-neutral-800 transition-colors"
+                      className="mt-3 w-full bg-[#F6F5F2] text-neutral-900 border border-neutral-300 text-xs font-semibold uppercase tracking-widest py-2 hover:border-neutral-900 transition-colors"
                     >
                       Explore Member Favorites
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        signOut();
+                      }}
+                      className="mt-2 w-full bg-neutral-900 text-white text-xs font-semibold uppercase tracking-widest py-2.5 hover:bg-neutral-800 transition-colors inline-flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Sign Out
                     </button>
                   </div>
                 </>
@@ -428,6 +474,26 @@ export const Navbar: React.FC<NavbarProps> = ({
               ))}
             </div>
           </div>
+
+          {user && (
+            <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-neutral-900 truncate">{user.name}</p>
+                <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  signOut();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 text-white text-xs uppercase tracking-wider shrink-0"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>

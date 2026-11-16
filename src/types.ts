@@ -58,3 +58,19 @@ export interface FilterState {
 }
 
 export type ActiveView = 'home' | 'shop' | 'cart';
+
+export type AuthProviderType = 'local' | 'google';
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  provider: AuthProviderType;
+  avatar?: string;
+  createdAt: string;
+}
+
+export interface StoredUser extends AuthUser {
+  passwordHash?: string;
+}
+

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { CartItem, Product } from '../types';
+import { useAuth } from './AuthContext';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP';
 
@@ -9,7 +10,7 @@ const CURRENCY_CONFIG: Record<CurrencyCode, { symbol: string; rate: number }> = 
   GBP: { symbol: '£', rate: 0.79 },
 };
 
-const STORAGE_KEY = 'dermstore_cart_v1';
+const STORAGE_KEY_PREFIX = 'dermstore_cart_v1';
 const FREE_SHIPPING_THRESHOLD_USD = 50;
 
 interface CartContextValue {
@@ -33,9 +34,9 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
-function loadInitialCart(): CartItem[] {
+function loadInitialCart(storageKey: string): CartItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -44,18 +45,21 @@ function loadInitialCart(): CartItem[] {
   }
 }
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>(loadInitialCart);
+const CartStateProvider: React.FC<{
+  storageKey: string;
+  children: React.ReactNode;
+}> = ({ storageKey, children }) => {
+  const [items, setItems] = useState<CartItem[]>(() => loadInitialCart(storageKey));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [currency, setCurrency] = useState<CurrencyCode>('USD');
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(storageKey, JSON.stringify(items));
     } catch {
       // Ignore storage quota errors in private browsing
     }
-  }, [items]);
+  }, [items, storageKey]);
 
   const openDrawer = () => setIsDrawerOpen(true);
   const closeDrawer = () => setIsDrawerOpen(false);
@@ -136,6 +140,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     >
       {children}
     </CartContext.Provider>
+  );
+};
+
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const storageKey = `${STORAGE_KEY_PREFIX}_${user?.id ?? 'guest'}`;
+
+  return (
+    <CartStateProvider key={storageKey} storageKey={storageKey}>
+      {children}
+    </CartStateProvider>
   );
 };
 
